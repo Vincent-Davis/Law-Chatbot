@@ -1,0 +1,10 @@
+google-generativeai
+langchain
+langchain-core
+langchain-chroma
+langchain-community
+chromadb
+pypdf
+python-dotenv
+langchain_google_genai
+pypdf2
