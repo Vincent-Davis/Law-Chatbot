@@ -8,3 +8,9 @@ pypdf
 python-dotenv
 langchain_google_genai
 pypdf2
+django
+gunicorn
+whitenoise
+psycopg2-binary
+requests
+urllib3

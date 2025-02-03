@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot Hukum AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+    }
+    .chat-box {
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 600px;
+      margin-bottom: 20px;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 5px;
+    }
+    .message.user {
+      text-align: right;
+      background-color: #e0f7fa;
+    }
+    .message.ai {
+      text-align: left;
+      background-color: #f1f8e9;
+    }
+    input[type="text"] {
+      width: 400px;
+      padding: 5px;
+    }
+    button {
+      padding: 5px 10px;
+      font-size: 1rem;
+    }
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chatbot Hukum AI</h1>
+
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+
+  <!-- Tampilkan riwayat chat -->
+  <div class="chat-box">
+    <h2>Riwayat Chat:</h2>
+    {% if chat_history %}
+      {% for message in chat_history %}
+        <div class="message {% if message.role == 'human' %}user{% else %}ai{% endif %}">
+          <strong>{% if message.role == 'human' %}Anda:{% else %}AI:{% endif %}</strong>
+          <p>{{ message.content }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>Belum ada percakapan.</p>
+    {% endif %}
+  </div>
+
+  <!-- Form untuk mengirim pertanyaan baru -->
+  <form method="post" action="{% url 'main:chat_api' %}">
+    {% csrf_token %}
+    <div>
+      <label for="question">Pertanyaan:</label><br>
+      <input type="text" id="question" name="question" value="{{ question|default:'' }}" required>
+    </div>
+    <br>
+    <button type="submit">Kirim</button>
+  </form>
+</body>
+</html>
