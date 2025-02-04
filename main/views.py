@@ -1,66 +1,27 @@
 import json
-import os
+
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from dotenv import load_dotenv
 import json
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.conf import settings
+
+from langchain_google_genai import ChatGoogleGenerativeAI
 # Load environment variables dari .env
 load_dotenv()
 
 # --- Import library LangChain dan lainnya ---
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+
+
 from langchain.chains import create_retrieval_chain, create_history_aware_retriever
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_chroma import Chroma
 from langchain_core.messages import AIMessage, HumanMessage
+from main.prompts import chat_qa_prompt, chat_contextualize_q_prompt, analysis_qa_prompt, checklist_qa_prompt
+from main.docs import retriever
+from main.utils import read_pdf
 
-# --- Fungsi untuk memuat dan memisahkan dokumen PDF ---
-def load_and_split_pdf(file_path, text_splitter):
-    loader = PyPDFLoader(file_path)
-    data = loader.load()  # Muat dokumen sebagai satu kesatuan
-    split_docs = text_splitter.split_documents(data)  # Pisahkan dokumen
-    return split_docs
-
-# --- Inisialisasi Global (hanya di-load satu kali saat startup) ---
-
-# Inisialisasi text splitter
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap =400,separators= ["\n\nPasal", "\n\nBAB", "\n\nBagian", "\n\n"])
-
-# Gabungkan dokumen dari file-file PDF
-combined_docs = []
-file_paths = [
-    "5. UU-40-2007 PERSEROAN TERBATAS.pdf",
-    "e39ab-uu-nomor-8-tahun-1999.pdf",
-    "kolonial_kuh_perdata_fix.pdf",
-    "KUH DAGANG.pdf",
-    "UU Nomor  19 Tahun 2016.pdf",
-    "UU Nomor 13 Tahun 2003.pdf",
-    "UU_1999_30.pdf",
-    "UU_Nomor_11_Tahun_2020-compressed.pdf",
-]
-base_path = os.path.join(settings.BASE_DIR, 'static', 'docs')
-
-for file_path in file_paths:
-    full_path = os.path.join(base_path, file_path)
-    print(f"Processing: {full_path}")
-    additional_docs = load_and_split_pdf(full_path, text_splitter)
-    combined_docs += additional_docs
-    print(f"Added {len(additional_docs)} documents from {file_path}")
-
-print("Total number of combined documents:", len(combined_docs))
-
-# Inisialisasi vectorstore dengan embeddings (hanya satu kali)
-vectorstore = Chroma.from_documents(
-    documents=combined_docs,
-    embedding=GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-)
-retriever = vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 10})
 
 # Inisialisasi LLM
 llm = ChatGoogleGenerativeAI(
@@ -72,138 +33,207 @@ llm = ChatGoogleGenerativeAI(
     response_mime_type="text/plain"
 )
 
-# Definisikan prompt sistem untuk QA
-system_prompt = """
-Anda adalah AI hukum yang sangat terlatih, dirancang untuk menjawab pertanyaan pengguna dengan cara yang jelas, akurat, dan ramah. Anda bertugas untuk:
-
-1. **Pemanfaatan Konteks Dokumen**:
-   - Berikut adalah konteks dokumen yang ditemukan:
-     {context}
-   - Gunakan konteks ini untuk mendukung jawaban Anda jika relevan dengan pertanyaan pengguna.
-   - Jika konteks dokumen tidak relevan dengan pertanyaan, abaikan konteks tersebut dan gunakan pengetahuan hukum Anda untuk memberikan jawaban.
-
-2. **Fokus pada Pertanyaan**:
-   - Berikan jawaban yang langsung menjawab inti pertanyaan pengguna.
-   - Jangan menyertakan informasi yang tidak relevan atau tidak mendukung jawaban.
-
-3. **Penyampaian Jawaban**:
-   - Jawaban Anda harus terstruktur dengan format berikut:
-     - **Jawaban Langsung**: Jawab inti pertanyaan dengan ringkas dan jelas.
-     - **Penjelasan**: Berikan alasan atau dasar hukum yang mendukung jawaban Anda.
-     - Jika ada pasal yang relevan, tambahkan rujukan pasal tersebut. Jika tidak ada, cukup berikan jawaban tanpa menyebutkan bahwa rujukan tidak ditemukan.
-
-4. **Nada dan Gaya**:
-   - Gunakan bahasa yang profesional tetapi tetap ramah dan mudah dipahami.
-   - Hindari istilah teknis yang berlebihan, dan jika digunakan, berikan penjelasan singkat untuk membantu pengguna memahami.
-
-5. **Ketentuan Khusus**:
-   - Jika retrieval menghasilkan dokumen yang tidak relevan, berikan jawaban berdasarkan pengetahuan hukum Anda tanpa menyebutkan informasi retrieval yang tidak relevan.
-   - Jangan memberikan informasi yang tidak diminta atau spekulatif.
-
-**Catatan Penting**:
-- Prioritaskan keakuratan dan relevansi dalam setiap jawaban.
-- Jangan menyertakan bagian "Rujukan Pasal" jika tidak ada pasal yang relevan.
-- Fokus utama Anda adalah memberikan jawaban langsung yang akurat, relevan, dan mendukung kebutuhan pengguna.
-"""
-
-# Definisikan prompt untuk reformulasi pertanyaan agar mandiri (contextualization)
-contextualize_q_system_prompt = '''Anda adalah asisten hukum AI yang dirancang untuk memahami dan mengolah pertanyaan hukum. Tugas Anda adalah:
-
-1. **Mengidentifikasi Kebutuhan Konteks**:
-   - Berdasarkan sejarah percakapan (chat history) dan dokumen hukum yang relevan, tentukan apakah pertanyaan terbaru pengguna memerlukan konteks tambahan untuk dipahami sepenuhnya.
-
-2. **Reformulasi Pertanyaan**:
-   - Jika pertanyaan pengguna merujuk pada konteks dari percakapan sebelumnya, reformulasikan pertanyaan tersebut menjadi pertanyaan mandiri yang jelas dan lengkap tanpa memerlukan chat history.
-   - Jika pertanyaan sudah mandiri dan jelas, kembalikan pertanyaan tersebut apa adanya.
-
-3. **Tujuan Reformulasi**:
-   - Buat pertanyaan mandiri agar sistem dapat mencari dokumen hukum yang relevan dan memberikan jawaban yang akurat.
-
-**Peraturan**:
-- Jangan menjawab pertanyaan.
-- Jangan memberikan penjelasan tambahan.
-- Hanya kembalikan pertanyaan dalam format yang mandiri dan dapat dipahami tanpa referensi ke chat history.
-- Jika pertanyaan sudah jelas dan tidak memerlukan perubahan, kembalikan seperti apa adanya.
-'''
-
-# Buat prompt untuk reformulasi pertanyaan berdasarkan riwayat percakapan
-contextualize_q_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", contextualize_q_system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-
 # Buat retriever yang aware terhadap riwayat percakapan
 history_aware_retriever = create_history_aware_retriever(
-    llm, retriever, contextualize_q_prompt
+    llm, retriever, chat_contextualize_q_prompt
 )
-
-# Buat prompt untuk chain QA
-qa_prompt = ChatPromptTemplate.from_messages(
-    [
-        ("system", system_prompt),
-        MessagesPlaceholder("chat_history"),
-        ("human", "{input}"),
-    ]
-)
-
 # Buat chain untuk menjawab pertanyaan berdasarkan dokumen yang diretrieval
-question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+question_answer_chain = create_stuff_documents_chain(llm, chat_qa_prompt)
+chat_rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
 
-# Gabungkan keduanya menjadi retrieval chain (RAG)
-rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
-
-# --- API View Django ---
 @csrf_exempt
 def chat_api(request):
     """
-    View ini:
-      - GET: Merender halaman form chat beserta riwayat chat (jika ada) yang disimpan di session.
-      - POST: Mengambil input pertanyaan, memanggil rag_chain untuk mendapatkan jawaban, 
-              memperbarui chat history, dan merender ulang halaman dengan riwayat chat yang ter-update.
+    API endpoint yang menerima payload JSON POST berisi:
+      - "question": pertanyaan pengguna (string)
+      - "chat_history": riwayat chat sebelumnya (list of dict)
+      
+    API akan:
+      - Mengambil "question" dan "chat_history" dari payload POST.
+      - Memanggil rag_chain dengan input tersebut.
+      - Menambahkan interaksi baru (pesan pengguna dan jawaban AI) ke dalam chat_history.
+      - Mengembalikan response JSON yang berisi "question", "answer", dan chat_history yang ter-update.
     """
-    # Ambil chat history dari session (jika belum ada, set ke list kosong)
-    chat_history = request.session.get("chat_history", [])
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Payload JSON tidak valid."}, status=400)
 
-    if request.method == "GET":
-        context = {"chat_history": chat_history}
-        return render(request, "chat_form.html", context)
-    
-    elif request.method == "POST":
-        question = request.POST.get("question", "").strip()
+        # Ambil pertanyaan dan chat_history dari payload
+        question = data.get("question", "").strip()
+        chat_history = data.get("chat_history", [])
 
         if not question:
-            context = {
-                "error": "Masukkan pertanyaan Anda.",
-                "chat_history": chat_history,
-            }
-            return render(request, "chat_form.html", context)
+            return JsonResponse({"error": "Masukkan pertanyaan Anda.", "chat_history": chat_history}, status=400)
+
+        if not isinstance(chat_history, list):
+            return JsonResponse({"error": "chat_history harus berupa list.", "chat_history": []}, status=400)
 
         try:
-            # Panggil rag_chain dengan input dan chat_history yang tersimpan
-            result = rag_chain.invoke({"input": question, "chat_history": chat_history})
+            # Panggil rag_chain dengan input dan chat_history yang diberikan
+            result = chat_rag_chain.invoke({"input": question, "chat_history": chat_history})
             answer = result.get("answer", "")
 
             # Perbarui chat_history dengan pesan pengguna dan jawaban AI
             chat_history.append({"role": "human", "content": question})
             chat_history.append({"role": "ai", "content": answer})
-            # Simpan chat_history yang diperbarui ke session
-            request.session["chat_history"] = chat_history
 
-            context = {
+            return JsonResponse({
                 "question": question,
                 "answer": answer,
-                "chat_history": chat_history,
-            }
-            return render(request, "chat_form.html", context)
+                "chat_history": chat_history
+            })
         except Exception as e:
-            context = {
-                "error": f"Terjadi kesalahan: {str(e)}",
-                "chat_history": chat_history,
-            }
-            return render(request, "chat_form.html", context)
-    
+            return JsonResponse({"error": f"Terjadi kesalahan: {str(e)}", "chat_history": chat_history}, status=500)
     else:
-        return HttpResponse("Metode tidak diizinkan.", status=405)
+        return JsonResponse({"error": "Metode tidak diizinkan. Gunakan POST."}, status=405)
+
+
+# Buat chain analisis dokumen menggunakan combine_documents chain
+analysis_chain = create_stuff_documents_chain(llm, analysis_qa_prompt)
+# Buat retrieval chain untuk analisis dokumen (jika diperlukan retrieval)
+analysis_rag_chain = create_retrieval_chain(retriever, analysis_chain)
+
+@csrf_exempt
+def analyze_document(request):
+    """
+    API endpoint untuk analisis dokumen.
+    Menerima file PDF melalui POST (key: 'pdf_file') dan mengembalikan hasil analisis dalam format JSON.
+    Menggunakan dokumen yang sama (combined_docs) untuk retrieval.
+    """
+    if request.method == "POST":
+        if "pdf_file" not in request.FILES:
+            return JsonResponse({"error": "File PDF tidak ditemukan. Kirim file dengan key 'pdf_file'."}, status=400)
+        
+        pdf_file = request.FILES["pdf_file"]
+        try:
+            document_text = read_pdf(pdf_file)
+        except Exception as e:
+            return JsonResponse({"error": f"Gagal membaca file PDF: {str(e)}"}, status=500)
+        
+        # Siapkan prompt analisis dengan memasukkan teks dokumen
+        prompt = f"""Dokumen yang akan dianalisis adalah sebagai berikut:
+{document_text}
+
+Tugas Anda adalah menganalisis dokumen tersebut dan memberikan output dalam format JSON dengan bidang berikut:
+- Judul Dokumen: Judul dokumen hukum.
+- Tanggal: Tanggal yang disebutkan dalam dokumen.
+- Pihak: Nama-nama pihak yang terlibat dalam dokumen.
+- Deskripsi: Ringkasan singkat mengenai isi dokumen.
+- Perjanjian: Kesepakatan atau kewajiban utama yang dibahas dalam dokumen.
+- Hak: Hak-hak yang secara eksplisit disebutkan dalam dokumen.
+- Penyelesaian: Cara penyelesaian sengketa yang disebutkan dalam dokumen.
+- Pembayaran: Ketentuan terkait pembayaran, jika ada.
+- Pengecualian: Ketentuan pengecualian atau kondisi tertentu yang disebutkan dalam dokumen.
+- Skor: Penilaian terhadap kelengkapan, kejelasan, dan kualitas dokumen.
+
+Berikan analisis dokumen, termasuk:
+- Kesesuaian dokumen dengan kebutuhan hukum.
+- Kesalahan atau kekurangan dalam teks dokumen.
+- Potensi celah hukum yang dapat menimbulkan masalah.
+- Rekomendasi klausa tambahan untuk mencegah potensi masalah di masa depan atau meningkatkan kejelasan dokumen.
+
+Pastikan untuk hanya menggunakan informasi yang relevan dari dokumen dan kosongkan bidang yang tidak ada informasinya.
+"""
+        try:
+            result = analysis_rag_chain.invoke({"input": prompt})
+            answer = result.get("answer", "")
+            try:
+                output_data = json.loads(answer)
+                return JsonResponse(output_data)
+            except Exception:
+                return JsonResponse({"analysis": answer})
+        except Exception as e:
+            return JsonResponse({"error": f"Terjadi kesalahan saat analisis: {str(e)}"}, status=500)
+    else:
+        return JsonResponse({"error": "Metode tidak diizinkan. Gunakan POST."}, status=405)
+
+checklist_question_answer_chain = create_stuff_documents_chain(llm, checklist_qa_prompt)
+# Membuat rag_chain tanpa chat history (langsung menggunakan retriever)
+checklist_rag_chain = create_retrieval_chain(retriever, checklist_question_answer_chain)
+
+@csrf_exempt
+def generate_business_checklist(request):
+    """
+    API endpoint untuk mengenerate checklist dari ide bisnis.
+    Mengharapkan payload POST dalam format JSON dengan key:
+      - "business_info": { ... }  // Data ide bisnis (dictionary)
+    
+    Contoh payload:
+    {
+        "business_info": {
+            "Nama Ide Bisnis": "Snack Sehat Nusantara",
+            "Deskripsi Ide": "Menjual snack sehat berbahan lokal...",
+            "Target Pasar": "Anak muda usia 18-35 di kota besar.",
+            "Model Bisnis": "Penjualan langsung dan online melalui e-commerce.",
+            "Lokasi Operasional": "Jakarta",
+            "Bentuk Usaha": "PT",
+            "Kebutuhan Modal": "100 juta",
+            "Tim atau Pendiri": ["Fani Najmun Nisa", "Rizky Mahardika"],
+            "Jenis Produk/Jasa": "Makanan ringan",
+            "Rencana Pemasaran": "Menggunakan media sosial untuk promosi dan influencer marketing.",
+            "Regulasi yang Diketahui": ["UU Perlindungan Konsumen", "Izin PIRT"],
+            "Kemitraan/Investor": "Tidak ada"
+        }
+    }
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Metode tidak diizinkan. Gunakan POST."}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+    except Exception:
+        return JsonResponse({"error": "Payload JSON tidak valid."}, status=400)
+    
+    business_info = data.get("business_info", {})
+    if not isinstance(business_info, dict):
+        return JsonResponse({"error": "business_info harus berupa objek JSON."}, status=400)
+    
+    # Ekstrak informasi ide bisnis dengan default jika tidak ada
+    nama = business_info.get("Nama Ide Bisnis", "Tidak disebutkan")
+    deskripsi = business_info.get("Deskripsi Ide", "Tidak disebutkan")
+    target_pasar = business_info.get("Target Pasar", "Tidak disebutkan")
+    model_bisnis = business_info.get("Model Bisnis", "Tidak disebutkan")
+    lokasi = business_info.get("Lokasi Operasional", "Tidak disebutkan")
+    bentuk = business_info.get("Bentuk Usaha", "Tidak disebutkan")
+    modal = business_info.get("Kebutuhan Modal", "Tidak disebutkan")
+    tim = business_info.get("Tim atau Pendiri", ["Tidak disebutkan"])
+    jenis_produk = business_info.get("Jenis Produk/Jasa", "Tidak disebutkan")
+    pemasaran = business_info.get("Rencana Pemasaran", "Tidak disebutkan")
+    regulasi = business_info.get("Regulasi yang Diketahui", ["Tidak disebutkan"])
+    kemitraan = business_info.get("Kemitraan/Investor", "Tidak disebutkan")
+    
+    # Susun prompt berdasarkan data ide bisnis
+    prompt = f"""
+Saya memiliki ide bisnis sebagai berikut:
+- Nama Ide Bisnis: {nama}
+- Deskripsi Ide: {deskripsi}
+- Target Pasar: {target_pasar}
+- Model Bisnis: {model_bisnis}
+- Lokasi Operasional: {lokasi}
+- Bentuk Usaha: {bentuk}
+- Kebutuhan Modal: {modal}
+- Tim atau Pendiri: {', '.join(tim) if isinstance(tim, list) else tim}
+- Jenis Produk/Jasa: {jenis_produk}
+- Rencana Pemasaran: {pemasaran}
+- Regulasi yang Diketahui: {', '.join(regulasi) if isinstance(regulasi, list) else regulasi}
+- Kemitraan/Investor: {kemitraan}
+
+Tolong bantu analisis ide bisnis saya. Berikut permintaan saya:
+
+1. Analisis singkat terhadap informasi bisnis di atas.
+2. Susun checklist poin-poin penting yang harus saya perhatikan, serta sertakan acuan pasal dari RAG (jika relevan).
+3. Jelaskan risiko hukum atau administratif yang mungkin muncul.
+4. Berikan rekomendasi atau langkah tambahan untuk memperkuat rencana bisnis saya.
+
+Jangan lupa, jawaban akhir harus dalam format JSON sesuai instruksi yang telah ditetapkan.
+    """
+    
+    try:
+        # Panggil chain tanpa menggunakan chat history
+        result = checklist_rag_chain.invoke({"input": prompt})
+        answer = result.get("answer", "")
+        return JsonResponse({"checklist": answer})
+    except Exception as e:
+        return JsonResponse({"error": f"Terjadi kesalahan: {str(e)}"}, status=500)
