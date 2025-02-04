@@ -97,7 +97,7 @@ Tugas Anda adalah:
    - **Pembayaran**: Ketentuan terkait pembayaran, jika ada.
    - **Pengecualian**: Ketentuan pengecualian atau kondisi tertentu yang disebutkan dalam dokumen.
    - **Skor**: Penilaian terhadap kelengkapan, kejelasan, dan kualitas dokumen.
-   - **Analisis** : detail untuk analisis akan dijelasakn dibawah
+   - **Analisis** : detail untuk analisis akan dijelaskan dibawah
 3. Lakukan analisis terhadap dokumen termasuk:
    - Kesesuaian dokumen dengan kebutuhan hukum.
    - Kesalahan atau kekurangan dalam teks dokumen.
