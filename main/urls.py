@@ -16,5 +16,5 @@ urlpatterns = [
     # API URLs (untuk keperluan API dan AJAX calls)
     path('api/chat/', views.chat_api, name='chat_api'),
     path('api/analyze-document/', views.analyze_document, name='analyze_document'),
-    path('api/generate-checklist/', views.generate_business_checklist, name='generate_business_checklist'),
+    path('api/business-checklist/', views.generate_business_checklist, name='api_business_checklist'),
 ]

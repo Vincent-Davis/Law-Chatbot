@@ -1,0 +1,490 @@
+/* Business Checklist Styles */
+
+:root {
+    --business-primary: #f59e0b;
+    --business-secondary: #d97706;
+    --business-success: #10b981;
+    --business-warning: #f59e0b;
+    --business-danger: #ef4444;
+    --business-info: #3b82f6;
+    --business-light: #fef3c7;
+    --business-dark: #92400e;
+}
+
+/* Form Section Styles */
+.form-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.form-section:hover {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Results Section */
+.results-section {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Form Controls */
+.business-form .form-control,
+.business-form .form-select {
+    border-radius: 0.5rem;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.business-form .form-control:focus,
+.business-form .form-select:focus {
+    border-color: var(--business-primary);
+    box-shadow: 0 0 0 0.2rem rgba(245, 158, 11, 0.25);
+    outline: none;
+}
+
+.business-form .form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.business-form .form-label i {
+    color: var(--business-primary);
+}
+
+/* Checklist Items */
+.checklist-item {
+    border-left: 4px solid var(--business-info);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+.checklist-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(59, 130, 246, 0.1);
+    border-color: var(--business-info);
+}
+
+.checklist-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--business-info), #1e40af);
+}
+
+.checklist-item h6 {
+    color: var(--business-info);
+    font-weight: 700;
+}
+
+.checklist-item .fas {
+    color: var(--business-success);
+}
+
+/* Risk Items */
+.risk-item {
+    border-left: 4px solid var(--business-warning);
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #fde68a;
+    position: relative;
+    overflow: hidden;
+}
+
+.risk-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(245, 158, 11, 0.15);
+    border-color: var(--business-warning);
+}
+
+.risk-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--business-warning), var(--business-secondary));
+}
+
+.risk-item h6 {
+    color: var(--business-secondary);
+    font-weight: 700;
+}
+
+.risk-item .border-top {
+    border-top: 2px solid #fbbf24 !important;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+/* Recommendation Items */
+.recommendation-item {
+    border-left: 4px solid var(--business-success);
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    margin-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    border: 1px solid #bbf7d0;
+    position: relative;
+    overflow: hidden;
+    padding: 0.75rem 1rem;
+}
+
+.recommendation-item:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px -2px rgba(16, 185, 129, 0.15);
+    border-color: var(--business-success);
+}
+
+.recommendation-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(135deg, var(--business-success), #059669);
+}
+
+.recommendation-item i {
+    color: var(--business-success);
+}
+
+/* Loading States */
+.loading-checklist {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    padding: 3rem;
+    text-align: center;
+}
+
+.loading-checklist .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    border-width: 0.3rem;
+}
+
+/* Button Styles */
+.btn-business-primary {
+    background: linear-gradient(135deg, var(--business-primary), var(--business-secondary));
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-business-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-business-primary:hover::before {
+    left: 100%;
+}
+
+.btn-business-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px -3px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, var(--business-secondary), #b45309);
+}
+
+/* Card Headers */
+.card-header.bg-business-primary {
+    background: linear-gradient(135deg, var(--business-primary), var(--business-secondary)) !important;
+    color: white !important;
+    border-radius: 1rem 1rem 0 0 !important;
+}
+
+.card-header.bg-business-light {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9) !important;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* Analysis Section */
+.analysis-section {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    border-radius: 0.75rem;
+    border: 2px solid #fbbf24;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.analysis-section h5 {
+    color: var(--business-dark);
+    font-weight: 700;
+}
+
+.analysis-section p {
+    color: #78350f;
+    line-height: 1.6;
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.status-indicator.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-indicator.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-indicator.info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.progress-step {
+    flex: 1;
+    text-align: center;
+    position: relative;
+}
+
+.progress-step::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: #e5e7eb;
+    z-index: 1;
+}
+
+.progress-step:last-child::after {
+    display: none;
+}
+
+.progress-step.active::after {
+    background: var(--business-primary);
+}
+
+.step-circle {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: #e5e7eb;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.5rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 2;
+}
+
+.progress-step.active .step-circle {
+    background: var(--business-primary);
+    color: white;
+}
+
+.step-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.progress-step.active .step-label {
+    color: var(--business-dark);
+}
+
+/* Print Styles */
+@media print {
+    .btn, .card-header .btn, .progress-steps {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        margin-bottom: 20px !important;
+        break-inside: avoid;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa !important;
+        color: #333 !important;
+    }
+    
+    .checklist-item,
+    .risk-item,
+    .recommendation-item {
+        break-inside: avoid;
+        margin-bottom: 15px;
+    }
+    
+    .form-section {
+        display: none !important;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .form-section,
+    .results-section {
+        margin: 0 -15px;
+        border-radius: 0;
+    }
+    
+    .checklist-item,
+    .risk-item,
+    .recommendation-item {
+        margin-left: -15px;
+        margin-right: -15px;
+        border-radius: 0;
+    }
+    
+    .btn-business-primary {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-steps {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .progress-step::after {
+        display: none;
+    }
+}
+
+/* Animation Classes */
+.fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Tooltips */
+.business-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.business-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+}
+
+.business-tooltip:hover::after {
+    opacity: 1;
+}
+
+/* Counter Animation */
+.counter {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--business-primary);
+}
+
+/* Icon Animations */
+.rotating-icon {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.bouncing-icon {
+    animation: bounce 1s ease-in-out infinite alternate;
+}
+
+@keyframes bounce {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-10px);
+    }
+}

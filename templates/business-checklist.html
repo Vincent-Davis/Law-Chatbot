@@ -1,46 +1,345 @@
 {% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Business Checklist - LegalLink</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
-    <link rel="stylesheet" href="{% static 'css/document-analysis.css' %}">
-    <script src="{% static 'js/business-checklist.js' %}" defer></script>
-</head>
-<body>
-    {% include 'partials/navbar.html' %}
-    
-    <div class="container">
-        <h1>Checklist Bisnis Anda</h1>
-        <div id="checklist-results">
-            <!-- Hasil checklist akan ditampilkan di sini -->
-        </div>
-        <div id="checklist-input">
-            <h2>Masukkan Informasi Bisnis</h2>
-            <form id="business-checklist-form">
-                <label for="business-name">Nama Bisnis:</label>
-                <input type="text" id="business-name" name="business_name" required>
 
-                <label for="business-description">Deskripsi Bisnis:</label>
-                <textarea id="business-description" name="business_description" required></textarea>
+{% block title %}Generator Checklist Bisnis - LegalLink{% endblock %}
 
-                <label for="target-market">Target Pasar:</label>
-                <input type="text" id="target-market" name="target_market" required>
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/business-checklist.css' %}">
+{% endblock %}
 
-                <label for="business-model">Model Bisnis:</label>
-                <input type="text" id="business-model" name="business_model" required>
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="text-center mb-5 fade-in-up">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-clipboard-check me-2 bouncing-icon"></i>Generator Checklist Bisnis
+                </h2>
+                <p class="text-muted">Buat checklist hukum komprehensif untuk memulai bisnis sesuai regulasi Indonesia</p>
+            </div>
 
-                <label for="location">Lokasi Operasional:</label>
-                <input type="text" id="location" name="location" required>
+            <!-- Progress Steps -->
+            {% if not checklist_results %}
+            <div class="progress-steps fade-in-up">
+                <div class="progress-step active">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Input Data</div>
+                </div>
+                <div class="progress-step">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Generate</div>
+                </div>
+                <div class="progress-step">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+            {% endif %}
 
-                <button type="submit">Buat Checklist</button>
-            </form>
+            <!-- Input Form -->
+            {% if not checklist_results %}
+            <div class="form-section fade-in-up">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-business-primary">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Informasi Bisnis
+                        </h5>
+                    </div>
+                    <div class="card-body business-form">
+                        <form method="post" id="business-checklist-form">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="business_name" class="form-label">
+                                        <i class="fas fa-building text-primary me-2"></i>Nama Ide Bisnis
+                                    </label>
+                                    <input type="text" class="form-control" id="business_name" name="business_name" 
+                                           placeholder="Contoh: Snack Sehat Nusantara" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="business_type" class="form-label">
+                                        <i class="fas fa-certificate text-primary me-2"></i>Bentuk Usaha
+                                    </label>
+                                    <select class="form-select" id="business_type" name="business_type" required>
+                                        <option value="">Pilih Bentuk Usaha</option>
+                                        <option value="PT">PT (Perseroan Terbatas)</option>
+                                        <option value="CV">CV (Commanditaire Vennootschap)</option>
+                                        <option value="UD">UD (Usaha Dagang)</option>
+                                        <option value="Koperasi">Koperasi</option>
+                                        <option value="Perorangan">Usaha Perorangan</option>
+                                        <option value="Firma">Firma</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="business_description" class="form-label">
+                                    <i class="fas fa-file-text text-primary me-2"></i>Deskripsi Ide Bisnis
+                                </label>
+                                <textarea class="form-control" id="business_description" name="business_description" 
+                                          rows="3" placeholder="Jelaskan detail bisnis yang akan dijalankan..." required></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="target_market" class="form-label">
+                                        <i class="fas fa-users text-primary me-2"></i>Target Pasar
+                                    </label>
+                                    <input type="text" class="form-control" id="target_market" name="target_market" 
+                                           placeholder="Contoh: Wanita usia 20-35 tahun" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="location" class="form-label">
+                                        <i class="fas fa-map-marker-alt text-primary me-2"></i>Lokasi Operasional
+                                    </label>
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           placeholder="Contoh: Jakarta, Bandung" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="business_model" class="form-label">
+                                        <i class="fas fa-chart-line text-primary me-2"></i>Model Bisnis
+                                    </label>
+                                    <input type="text" class="form-control" id="business_model" name="business_model" 
+                                           placeholder="Contoh: B2C, B2B, Marketplace" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="product_type" class="form-label">
+                                        <i class="fas fa-box text-primary me-2"></i>Jenis Produk/Jasa
+                                    </label>
+                                    <input type="text" class="form-control" id="product_type" name="product_type" 
+                                           placeholder="Contoh: Fashion, Makanan, Jasa Konsultasi" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="capital_needed" class="form-label">
+                                        <i class="fas fa-money-bill text-primary me-2"></i>Kebutuhan Modal
+                                    </label>
+                                    <input type="text" class="form-control" id="capital_needed" name="capital_needed" 
+                                           placeholder="Contoh: 100 juta rupiah">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="team_members" class="form-label">
+                                        <i class="fas fa-user-friends text-primary me-2"></i>Tim/Pendiri
+                                    </label>
+                                    <input type="text" class="form-control" id="team_members" name="team_members" 
+                                           placeholder="Pisahkan dengan koma: John Doe, Jane Smith">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="marketing_plan" class="form-label">
+                                    <i class="fas fa-bullhorn text-primary me-2"></i>Rencana Pemasaran
+                                </label>
+                                <textarea class="form-control" id="marketing_plan" name="marketing_plan" 
+                                          rows="2" placeholder="Jelaskan strategi pemasaran yang akan digunakan..."></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="known_regulations" class="form-label">
+                                        <i class="fas fa-gavel text-primary me-2"></i>Regulasi yang Sudah Diketahui
+                                    </label>
+                                    <input type="text" class="form-control" id="known_regulations" name="known_regulations" 
+                                           placeholder="Pisahkan dengan koma: UU No. 8 tahun 1999, PP No. 7 tahun 2021">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="partnerships" class="form-label">
+                                        <i class="fas fa-handshake text-primary me-2"></i>Kemitraan/Investor
+                                    </label>
+                                    <input type="text" class="form-control" id="partnerships" name="partnerships" 
+                                           placeholder="Sebutkan jika ada, atau tulis 'Tidak ada'">
+                                </div>
+                            </div>
+                            
+                            <div class="text-center">
+                                <button type="submit" class="btn-business-primary" id="generate-btn">
+                                    <i class="fas fa-magic me-2"></i>Generate Checklist
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-checklist d-none">
+                <div class="spinner-border text-warning mb-3 rotating-icon" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5>Membuat checklist bisnis...</h5>
+                <p class="text-muted">Proses ini mungkin membutuhkan beberapa menit</p>
+            </div>
+
+            <!-- Results Section -->
+            {% if checklist_results %}
+            <div class="results-section slide-in-left">
+                <!-- Header -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-business-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-check me-2"></i>Checklist Bisnis: {{ business_name|default:"Ide Bisnis Anda" }}
+                            </h5>
+                            <a href="{% url 'main:business_checklist' %}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus me-1"></i>Checklist Baru
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Analysis -->
+                {% if checklist_results.analisis_informasi_bisnis %}
+                <div class="analysis-section">
+                    <h5>
+                        <i class="fas fa-chart-pie me-2"></i>Analisis Informasi Bisnis
+                    </h5>
+                    <p>{{ checklist_results.analisis_informasi_bisnis }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Checklist -->
+                {% if checklist_results.checklist %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-business-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-list-check me-2"></i>Checklist Hukum & Administratif
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for item in checklist_results.checklist %}
+                        <div class="checklist-item p-3">
+                            <h6 class="text-primary mb-2">
+                                <i class="fas fa-check-circle me-2"></i>{{ item.poin }}
+                            </h6>
+                            <p class="mb-2">{{ item.deskripsi }}</p>
+                            {% if item.acuan_pasal %}
+                            <small class="text-muted">
+                                <i class="fas fa-gavel me-1"></i>
+                                <strong>Acuan Hukum:</strong> {{ item.acuan_pasal }}
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Risks -->
+                {% if checklist_results.risiko %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-business-light">
+                        <h5 class="mb-0 text-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Risiko & Mitigasi
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for risk in checklist_results.risiko %}
+                        <div class="risk-item p-3">
+                            <h6 class="text-warning mb-2">
+                                <i class="fas fa-warning me-2"></i>Risiko
+                            </h6>
+                            <p class="mb-2">{{ risk.deskripsi }}</p>
+                            <div class="border-top pt-2">
+                                <h6 class="text-success mb-1">
+                                    <i class="fas fa-shield-alt me-2"></i>Rekomendasi Mitigasi:
+                                </h6>
+                                <p class="mb-0">{{ risk.rekomendasi }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Additional Recommendations -->
+                {% if checklist_results.rekomendasi_tambahan %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-business-light">
+                        <h5 class="mb-0 text-success">
+                            <i class="fas fa-lightbulb me-2"></i>Rekomendasi Tambahan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for rec in checklist_results.rekomendasi_tambahan %}
+                        <div class="recommendation-item">
+                            <i class="fas fa-arrow-right text-success me-2"></i>{{ rec }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Action Buttons -->
+                <div class="text-center">
+                    <button class="btn btn-outline-primary btn-lg me-3" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Cetak Checklist
+                    </button>
+                    <a href="{% url 'main:business_checklist' %}" class="btn-business-primary">
+                        <i class="fas fa-plus me-2"></i>Buat Checklist Baru
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
+</div>
+{% endblock %}
 
-    {% include 'partials/footer.html' %}
-</body>
-</html>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('business-checklist-form');
+    const generateBtn = document.getElementById('generate-btn');
+    const loadingState = document.getElementById('loading-state');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (loadingState) {
+                loadingState.classList.remove('d-none');
+                if (generateBtn) {
+                    generateBtn.disabled = true;
+                    generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+                }
+                
+                // Update progress steps
+                document.querySelectorAll('.progress-step').forEach((step, index) => {
+                    if (index === 1) step.classList.add('active');
+                });
+                
+                // Scroll to loading state
+                loadingState.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+
+        // Add animation to form elements
+        const inputs = form.querySelectorAll('input, textarea, select');
+        inputs.forEach((input, index) => {
+            input.style.animationDelay = `${index * 0.1}s`;
+            input.classList.add('fade-in-up');
+        });
+    }
+
+    // Add tooltips
+    const labels = document.querySelectorAll('.form-label');
+    labels.forEach(label => {
+        const icon = label.querySelector('i');
+        if (icon) {
+            icon.setAttribute('data-tooltip', 'Field wajib diisi');
+            icon.classList.add('business-tooltip');
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -617,6 +617,8 @@ Tolong bantu analisis ide bisnis saya. Berikan jawaban dalam format JSON dengan 
                     "rekomendasi_tambahan": []
                 }
             
+            # Tambahkan business_name ke context untuk template
+            context['business_name'] = business_info["Nama Ide Bisnis"]
             context['business_info'] = business_info
             messages.success(request, 'Checklist bisnis berhasil dibuat.')
             
