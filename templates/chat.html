@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Chat AI Hukum - LegalLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-robot me-2"></i>Chat AI Hukum
+                </h2>
+                <p class="text-muted">Konsultasi hukum dengan asisten AI yang cerdas</p>
+            </div>
+            
+            <!-- Chat Container -->
+            <div class="card shadow-lg border-0" style="min-height: 500px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>Percakapan
+                        <div class="float-end">
+                            <a href="{% url 'main:clear_chat' %}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-trash me-1"></i>Hapus Riwayat
+                            </a>
+                        </div>
+                    </h5>
+                </div>
+                
+                <div class="card-body chat-container" style="max-height: 400px; overflow-y: auto;">
+                    {% if chat_history %}
+                        {% for message in chat_history %}
+                            <div class="message mb-3 {% if message.role == 'human' %}text-end{% endif %}">
+                                <div class="d-inline-block p-3 rounded-3 {% if message.role == 'human' %}bg-primary text-white{% else %}bg-light{% endif %}" style="max-width: 80%;">
+                                    <strong>{% if message.role == 'human' %}Anda{% else %}AI Assistant{% endif %}:</strong>
+                                    <div class="mt-1">{{ message.content|linebreaks }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-comment-dots fa-3x mb-3"></i>
+                            <p>Belum ada percakapan. Mulai dengan mengirim pesan!</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="card-footer">
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <input type="text" 
+                               name="question" 
+                               class="form-control" 
+                               placeholder="Ketik pertanyaan hukum Anda di sini..." 
+                               required
+                               autocomplete="off">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+                    </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}

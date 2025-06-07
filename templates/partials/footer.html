@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <footer>
+    <div class="footer-content">
+      <p>&copy; 2023 LegalLink. All rights reserved.</p>
+      <ul>
+        <li><a href="{% url 'main:index' %}">Home</a></li>
+        <li><a href="{% url 'main:chat' %}">Chat with AI</a></li>
+        <li><a href="{% url 'main:document_analysis' %}">Document Analysis</a></li>
+        <li><a href="{% url 'main:business_checklist' %}">Business Checklist</a></li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>

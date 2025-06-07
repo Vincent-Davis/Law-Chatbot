@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>LegalLink Navigation</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'main:index' %}">Beranda</a></li>
+            <li><a href="{% url 'main:chat' %}">Chat dengan AI</a></li>
+            <li><a href="{% url 'main:document_analysis' %}">Analisis Dokumen</a></li>
+            <li><a href="{% url 'main:business_checklist' %}">Checklist Bisnis</a></li>
+        </ul>
+    </nav>
+</body>
+</html>

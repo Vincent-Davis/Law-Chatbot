@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-h(4+qa!p1%w-@mdw5)-@^l+#forhw&3)yhx6yqtiul!d(v)i_o
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -51,6 +51,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'legallink.urls'
+
+
+
 
 TEMPLATES = [
     {
@@ -118,12 +121,16 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
+

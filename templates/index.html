@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}LegalLink - Asisten Hukum AI Terpercaya{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-8 mx-auto text-center hero-content">
+                <h1 class="display-4 fw-bold mb-4 animate-fade-in-up">
+                    Asisten Hukum AI <span class="text-warning">Terpercaya</span>
+                </h1>
+                <p class="lead mb-5 animate-fade-in-up" style="animation-delay: 0.2s;">
+                    Solusi cerdas untuk konsultasi hukum, analisis dokumen, dan perencanaan bisnis dengan teknologi AI terdepan
+                </p>
+                <div class="animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <a href="{% url 'main:chat' %}" class="btn btn-light btn-lg me-3 mb-3">
+                        <i class="fas fa-comments me-2"></i>Mulai Chat
+                    </a>
+                    <a href="{% url 'main:document_analysis' %}" class="btn btn-outline-light btn-lg mb-3">
+                        <i class="fas fa-file-alt me-2"></i>Analisis Dokumen
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="content-section">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="section-title">Fitur Unggulan</h2>
+                <p class="section-subtitle">
+                    Dapatkan bantuan hukum profesional dengan teknologi AI yang canggih dan mudah digunakan
+                </p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Chat AI Feature -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-4">
+                            <i class="fas fa-robot" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Chat AI Hukum</h5>
+                        <p class="card-text text-muted mb-4">
+                            Konsultasi hukum interaktif 24/7 dengan AI yang didukung database hukum Indonesia terlengkap
+                        </p>
+                        <a href="{% url 'main:chat' %}" class="btn btn-primary">
+                            <i class="fas fa-comments me-2"></i>Mulai Chat
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Document Analysis Feature -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-4">
+                            <i class="fas fa-search-plus" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Analisis Dokumen</h5>
+                        <p class="card-text text-muted mb-4">
+                            Upload dan analisis dokumen hukum untuk mengetahui kelengkapan, risiko, dan kualitas dokumen
+                        </p>
+                        <a href="{% url 'main:document_analysis' %}" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>Analisis Sekarang
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Business Checklist Feature -->
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-4">
+                            <i class="fas fa-clipboard-check" style="font-size: 4rem;"></i>
+                        </div>
+                        <h5 class="card-title fw-bold mb-3">Checklist Bisnis</h5>
+                        <p class="card-text text-muted mb-4">
+                            Generator checklist hukum untuk memulai bisnis sesuai regulasi dan perundangan yang berlaku
+                        </p>
+                        <a href="{% url 'main:business_checklist' %}" class="btn btn-warning">
+                            <i class="fas fa-magic me-2"></i>Buat Checklist
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-users text-primary mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="fw-bold">1000+</h4>
+                    <p class="text-muted">Pengguna Aktif</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-file-alt text-success mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="fw-bold">500+</h4>
+                    <p class="text-muted">Dokumen Dianalisis</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-clock text-warning mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="fw-bold">24/7</h4>
+                    <p class="text-muted">Layanan Tersedia</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="p-4">
+                    <i class="fas fa-shield-alt text-info mb-3" style="font-size: 3rem;"></i>
+                    <h4 class="fw-bold">100%</h4>
+                    <p class="text-muted">Keamanan Data</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container">
+        <div class="row text-center text-white">
+            <div class="col-lg-8 mx-auto">
+                <h3 class="fw-bold mb-3">Siap Memulai Konsultasi Hukum?</h3>
+                <p class="lead mb-4">
+                    Bergabunglah dengan ribuan pengguna yang telah mempercayai LegalLink untuk kebutuhan hukum mereka
+                </p>
+                <a href="{% url 'main:chat' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Mulai Sekarang
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add smooth scrolling and animation effects
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add animation to cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in-up');
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.feature-card').forEach(card => {
+            observer.observe(card);
+        });
+    });
+</script>
+{% endblock %}

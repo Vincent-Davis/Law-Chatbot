@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import json
 from django.shortcuts import render
 from django.http import HttpResponse
+from django.contrib import messages
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 # Load environment variables dari .env
@@ -237,3 +238,206 @@ Jangan lupa, jawaban akhir harus dalam format JSON sesuai instruksi yang telah d
         return JsonResponse({"checklist": answer})
     except Exception as e:
         return JsonResponse({"error": f"Terjadi kesalahan: {str(e)}"}, status=500)
+    
+# ===== VIEWS UNTUK WEB INTERFACE =====
+
+def index(request):
+    """Homepage dengan overview semua fitur"""
+    return render(request, 'index.html')
+
+def chat_view(request):
+    """
+    View untuk halaman chat - menampilkan form dan riwayat chat
+    Menggunakan template chat.html yang sudah ada
+    """
+    chat_history = request.session.get('chat_history', [])
+    
+    if request.method == 'POST':
+        question = request.POST.get('question', '').strip()
+        
+        if not question:
+            messages.error(request, 'Masukkan pertanyaan Anda.')
+            return render(request, 'chat.html', {'chat_history': chat_history})
+        
+        try:
+            # Panggil rag_chain dengan input dan chat_history yang diberikan
+            result = chat_rag_chain.invoke({"input": question, "chat_history": chat_history})
+            answer = result.get("answer", "")
+            
+            # Perbarui chat_history dengan pesan pengguna dan jawaban AI
+            chat_history.append({"role": "human", "content": question})
+            chat_history.append({"role": "ai", "content": answer})
+            
+            # Simpan ke session
+            request.session['chat_history'] = chat_history
+            
+        except Exception as e:
+            messages.error(request, f'Terjadi kesalahan: {str(e)}')
+            
+    return render(request, 'chat.html', {'chat_history': chat_history})
+
+def clear_chat(request):
+    """Clear chat history"""
+    if 'chat_history' in request.session:
+        del request.session['chat_history']
+    messages.success(request, 'Riwayat chat telah dihapus.')
+    return redirect('main:chat')
+
+def document_analysis_view(request):
+    """
+    View untuk halaman analisis dokumen
+    Menggunakan template document-analysis.html yang sudah ada
+    """
+    context = {}
+    
+    if request.method == 'POST':
+        if 'pdf_file' not in request.FILES:
+            messages.error(request, 'Pilih file PDF untuk dianalisis.')
+            return render(request, 'document-analysis.html', context)
+        
+        pdf_file = request.FILES['pdf_file']
+        
+        try:
+            # Baca file PDF
+            document_text = read_pdf(pdf_file)
+            
+            # Analisis dokumen dengan prompt yang sesuai untuk template
+            prompt = f"""Dokumen yang akan dianalisis adalah sebagai berikut:
+{document_text}
+
+Tugas Anda adalah menganalisis dokumen tersebut dan memberikan output dalam format JSON dengan bidang berikut:
+- Judul Dokumen: Judul dokumen hukum.
+- Tanggal: Tanggal yang disebutkan dalam dokumen.
+- Pihak: Nama-nama pihak yang terlibat dalam dokumen.
+- Deskripsi: Ringkasan singkat mengenai isi dokumen.
+- Perjanjian: Kesepakatan atau kewajiban utama yang dibahas dalam dokumen.
+- Hak: Hak-hak yang secara eksplisit disebutkan dalam dokumen.
+- Penyelesaian: Cara penyelesaian sengketa yang disebutkan dalam dokumen.
+- Pembayaran: Ketentuan terkait pembayaran, jika ada.
+- Pengecualian: Ketentuan pengecualian atau kondisi tertentu yang disebutkan dalam dokumen.
+- Skor: Penilaian terhadap kelengkapan, kejelasan, dan kualitas dokumen (1-10).
+- Kesimpulan: Kesimpulan keseluruhan tentang dokumen.
+- Clause Suggestion: Array berisi saran klausul tambahan dengan format [{"title": "...", "description": "..."}].
+
+Berikan analisis yang mencakup:
+- Kesesuaian dokumen dengan kebutuhan hukum.
+- Kesalahan atau kekurangan dalam teks dokumen.
+- Potensi celah hukum yang dapat menimbulkan masalah.
+- Rekomendasi klausa tambahan untuk mencegah potensi masalah di masa depan.
+"""
+            
+            result = analysis_rag_chain.invoke({"input": prompt})
+            answer = result.get("answer", "")
+            
+            # Coba parse sebagai JSON
+            try:
+                analysis_result = json.loads(answer)
+                context['analysis'] = {
+                    'summary': analysis_result.get('Kesimpulan', 'Tidak ada kesimpulan'),
+                    'recommendations': [
+                        item.get('description', item.get('title', str(item))) 
+                        for item in analysis_result.get('Clause Suggestion', [])
+                    ] if isinstance(analysis_result.get('Clause Suggestion'), list) else [],
+                    'legal_risks': f"Skor dokumen: {analysis_result.get('Skor', 'N/A')}/10. " + 
+                                 analysis_result.get('Deskripsi', 'Tidak ada deskripsi risiko.'),
+                    'full_result': analysis_result
+                }
+            except json.JSONDecodeError:
+                context['analysis'] = {
+                    'summary': answer,
+                    'recommendations': ['Tidak dapat memparse hasil analisis'],
+                    'legal_risks': 'Error dalam analisis',
+                    'full_result': {'raw_answer': answer}
+                }
+            
+            context['filename'] = pdf_file.name
+            messages.success(request, f'Dokumen "{pdf_file.name}" berhasil dianalisis.')
+            
+        except Exception as e:
+            messages.error(request, f'Gagal menganalisis dokumen: {str(e)}')
+    
+    return render(request, 'document-analysis.html', context)
+
+def business_checklist_view(request):
+    """
+    View untuk halaman generator checklist bisnis
+    Menggunakan template business-checklist.html yang sudah ada
+    """
+    context = {}
+    
+    if request.method == 'POST':
+        # Ambil data dari form sesuai dengan field name di template
+        business_info = {
+            "Nama Ide Bisnis": request.POST.get('business_name', ''),
+            "Deskripsi Ide": request.POST.get('business_description', ''),
+            "Target Pasar": request.POST.get('target_market', ''),
+            "Model Bisnis": request.POST.get('business_model', ''),
+            "Lokasi Operasional": request.POST.get('location', ''),
+            "Bentuk Usaha": request.POST.get('business_type', 'PT'),
+            "Kebutuhan Modal": request.POST.get('capital_needed', ''),
+            "Tim atau Pendiri": request.POST.get('team_members', '').split(',') if request.POST.get('team_members') else [],
+            "Jenis Produk/Jasa": request.POST.get('product_type', ''),
+            "Rencana Pemasaran": request.POST.get('marketing_plan', ''),
+            "Regulasi yang Diketahui": request.POST.get('known_regulations', '').split(',') if request.POST.get('known_regulations') else [],
+            "Kemitraan/Investor": request.POST.get('partnerships', 'Tidak ada')
+        }
+        
+        # Buat prompt
+        prompt = f"""
+Saya memiliki ide bisnis sebagai berikut:
+- Nama Ide Bisnis: {business_info["Nama Ide Bisnis"]}
+- Deskripsi Ide: {business_info["Deskripsi Ide"]}
+- Target Pasar: {business_info["Target Pasar"]}
+- Model Bisnis: {business_info["Model Bisnis"]}
+- Lokasi Operasional: {business_info["Lokasi Operasional"]}
+- Bentuk Usaha: {business_info["Bentuk Usaha"]}
+- Kebutuhan Modal: {business_info["Kebutuhan Modal"]}
+- Tim atau Pendiri: {', '.join(business_info["Tim atau Pendiri"])}
+- Jenis Produk/Jasa: {business_info["Jenis Produk/Jasa"]}
+- Rencana Pemasaran: {business_info["Rencana Pemasaran"]}
+- Regulasi yang Diketahui: {', '.join(business_info["Regulasi yang Diketahui"])}
+- Kemitraan/Investor: {business_info["Kemitraan/Investor"]}
+
+Tolong bantu analisis ide bisnis saya. Berikan jawaban dalam format JSON dengan struktur:
+{{
+  "analisis_informasi_bisnis": "analisis singkat",
+  "checklist": [
+    {{
+      "poin": "nama poin",
+      "deskripsi": "deskripsi detail",
+      "acuan_pasal": "referensi hukum jika ada"
+    }}
+  ],
+  "risiko": [
+    {{
+      "deskripsi": "deskripsi risiko",
+      "rekomendasi": "cara mitigasi"
+    }}
+  ],
+  "rekomendasi_tambahan": ["rekomendasi 1", "rekomendasi 2"]
+}}
+"""
+        
+        try:
+            result = checklist_rag_chain.invoke({"input": prompt})
+            answer = result.get("answer", "")
+            
+            # Coba parse sebagai JSON
+            try:
+                checklist_result = json.loads(answer)
+                context['checklist_results'] = checklist_result
+            except json.JSONDecodeError:
+                context['checklist_results'] = {
+                    "analisis_informasi_bisnis": answer,
+                    "checklist": [],
+                    "risiko": [],
+                    "rekomendasi_tambahan": []
+                }
+            
+            context['business_info'] = business_info
+            messages.success(request, 'Checklist bisnis berhasil dibuat.')
+            
+        except Exception as e:
+            messages.error(request, f'Terjadi kesalahan: {str(e)}')
+    
+    return render(request, 'business-checklist.html', context)

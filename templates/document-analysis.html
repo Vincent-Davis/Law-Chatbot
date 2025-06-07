@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Analisis Dokumen - LegalLink</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/document-analysis.css' %}">
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+    
+    <div class="container">
+        <h1>Hasil Analisis Dokumen</h1>
+        
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+        
+        {% if analysis %}
+            <div class="analysis-results">
+                <h2>Ringkasan Analisis</h2>
+                <p>{{ analysis.summary }}</p>
+                
+                <h3>Rekomendasi</h3>
+                <ul>
+                    {% for recommendation in analysis.recommendations %}
+                        <li>{{ recommendation }}</li>
+                    {% endfor %}
+                </ul>
+                
+                <h3>Risiko Hukum</h3>
+                <p>{{ analysis.legal_risks }}</p>
+            </div>
+        {% else %}
+            <p>Tidak ada hasil analisis untuk ditampilkan.</p>
+        {% endif %}
+    </div>
+    
+    {% include 'partials/footer.html' %}
+    <script src="{% static 'js/document-upload.js' %}"></script>
+</body>
+</html>

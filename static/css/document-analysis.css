@@ -1,0 +1,39 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+}
+
+h1 {
+  color: #333;
+}
+
+.analysis-results {
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  margin-bottom: 20px;
+}
+
+.analysis-item {
+  margin-bottom: 10px;
+}
+
+.analysis-item h2 {
+  font-size: 1.2em;
+  color: #007BFF;
+}
+
+.analysis-item p {
+  margin: 5px 0;
+}
+
+.error-message {
+  color: red;
+  font-weight: bold;
+}
+
+.success-message {
+  color: green;
+  font-weight: bold;
+}

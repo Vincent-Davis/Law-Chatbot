@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Business Checklist - LegalLink</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <link rel="stylesheet" href="{% static 'css/document-analysis.css' %}">
+    <script src="{% static 'js/business-checklist.js' %}" defer></script>
+</head>
+<body>
+    {% include 'partials/navbar.html' %}
+    
+    <div class="container">
+        <h1>Checklist Bisnis Anda</h1>
+        <div id="checklist-results">
+            <!-- Hasil checklist akan ditampilkan di sini -->
+        </div>
+        <div id="checklist-input">
+            <h2>Masukkan Informasi Bisnis</h2>
+            <form id="business-checklist-form">
+                <label for="business-name">Nama Bisnis:</label>
+                <input type="text" id="business-name" name="business_name" required>
+
+                <label for="business-description">Deskripsi Bisnis:</label>
+                <textarea id="business-description" name="business_description" required></textarea>
+
+                <label for="target-market">Target Pasar:</label>
+                <input type="text" id="target-market" name="target_market" required>
+
+                <label for="business-model">Model Bisnis:</label>
+                <input type="text" id="business-model" name="business_model" required>
+
+                <label for="location">Lokasi Operasional:</label>
+                <input type="text" id="location" name="location" required>
+
+                <button type="submit">Buat Checklist</button>
+            </form>
+        </div>
+    </div>
+
+    {% include 'partials/footer.html' %}
+</body>
+</html>
