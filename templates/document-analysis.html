@@ -1,44 +1,445 @@
 {% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Analisis Dokumen - LegalLink</title>
-    <link rel="stylesheet" href="{% static 'css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'css/document-analysis.css' %}">
-</head>
-<body>
-    {% include 'partials/navbar.html' %}
-    
-    <div class="container">
-        <h1>Hasil Analisis Dokumen</h1>
-        
-        {% if error %}
-            <p class="error">{{ error }}</p>
-        {% endif %}
-        
-        {% if analysis %}
-            <div class="analysis-results">
-                <h2>Ringkasan Analisis</h2>
-                <p>{{ analysis.summary }}</p>
-                
-                <h3>Rekomendasi</h3>
-                <ul>
-                    {% for recommendation in analysis.recommendations %}
-                        <li>{{ recommendation }}</li>
-                    {% endfor %}
-                </ul>
-                
-                <h3>Risiko Hukum</h3>
-                <p>{{ analysis.legal_risks }}</p>
+
+{% block title %}Analisis Dokumen - LegalLink{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/document-analysis.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-file-alt me-2"></i>Analisis Dokumen Hukum
+                </h2>
+                <p class="text-muted">Upload dan analisis dokumen hukum untuk mengetahui kelengkapan, risiko, dan kualitas dokumen</p>
             </div>
-        {% else %}
-            <p>Tidak ada hasil analisis untuk ditampilkan.</p>
-        {% endif %}
+
+            <!-- Upload Section -->
+            {% if not analysis %}
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-upload me-2"></i>Upload Dokumen
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="upload-form" method="post" enctype="multipart/form-data" class="text-center">
+                        {% csrf_token %}
+                        <div class="upload-area mb-4" id="upload-area">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-success mb-3"></i>
+                            <h5>Drag & Drop file PDF di sini</h5>
+                            <p class="text-muted">atau klik untuk memilih file</p>
+                            <input type="file" id="pdf-file" name="pdf_file" accept=".pdf" required class="d-none">
+                        </div>
+                        
+                        <div id="file-info" class="d-none mb-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                <span id="file-name"></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="remove-file">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg" id="analyze-btn" disabled>
+                            <i class="fas fa-search me-2"></i>Analisis Dokumen
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Loading State -->
+            <div id="loading-state" class="card shadow-lg border-0 d-none">
+                <div class="card-body text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <h5>Menganalisis dokumen...</h5>
+                    <p class="text-muted">Proses ini mungkin membutuhkan beberapa menit</p>
+                </div>
+            </div>
+
+            <!-- Error Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{% if message.tags == 'error' %}exclamation-circle{% else %}check-circle{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Analysis Results -->
+            {% if analysis and not analysis.full_result.error %}
+            <div class="analysis-results">
+                <!-- Header with filename -->
+                <div class="card shadow-lg border-0 mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-alt me-2"></i>Hasil Analisis: {{ filename|default:"Dokumen" }}
+                            </h5>
+                            <a href="{% url 'main:document_analysis' %}" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-plus me-1"></i>Analisis Baru
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Card -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-chart-line me-2"></i>Ringkasan Analisis
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">{{ analysis.full_result.Kesimpulan }}</p>
+                        
+                        {% if analysis.full_result.Skor %}
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="score-container">
+                                    <h6>Skor Dokumen</h6>
+                                    <div class="score-circle">
+                                        <span class="score-number">{{ analysis.full_result.Skor }}/10</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Status Dokumen</h6>
+                                {% if analysis.full_result.Skor >= 8 %}
+                                    <span class="badge bg-success fs-6">Sangat Baik</span>
+                                {% elif analysis.full_result.Skor >= 6 %}
+                                    <span class="badge bg-warning fs-6">Baik</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">Perlu Perbaikan</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Document Details -->
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-info-circle me-2"></i>Detail Dokumen
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% if analysis.full_result.Judul_Dokumen %}
+                            <div class="col-md-6 mb-3">
+                                <strong><i class="fas fa-file-alt text-primary me-2"></i>Judul:</strong>
+                                <p>{{ analysis.full_result.Judul_Dokumen }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis.full_result.Tanggal %}
+                            <div class="col-md-6 mb-3">
+                                <strong><i class="fas fa-calendar text-primary me-2"></i>Tanggal:</strong>
+                                <p>{{ analysis.full_result.Tanggal }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis.full_result.Pihak %}
+                            <div class="col-12 mb-3">
+                                <strong><i class="fas fa-users text-primary me-2"></i>Pihak Terlibat:</strong>
+                                <div class="row mt-2">
+                                    {% for pihak in analysis.full_result.Pihak %}
+                                        {% if pihak.Nama %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="border rounded p-3">
+                                                <h6 class="text-primary">{{ pihak.Peran }}</h6>
+                                                <p class="mb-1"><strong>Nama:</strong> {{ pihak.Nama }}</p>
+                                                {% if pihak.Jabatan %}<p class="mb-1"><strong>Jabatan:</strong> {{ pihak.Jabatan }}</p>{% endif %}
+                                                {% if pihak.Alamat %}<p class="mb-0"><strong>Alamat:</strong> {{ pihak.Alamat }}</p>{% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if analysis.full_result.Deskripsi %}
+                            <div class="col-12 mb-3">
+                                <strong><i class="fas fa-file-text text-primary me-2"></i>Deskripsi:</strong>
+                                <p>{{ analysis.full_result.Deskripsi }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agreement Details -->
+                {% if analysis.full_result.Perjanjian %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-handshake me-2"></i>Poin-Poin Perjanjian
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for poin in analysis.full_result.Perjanjian %}
+                            <li class="list-group-item border-0 ps-0">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                {{ poin }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Rights Section -->
+                {% if analysis.full_result.Hak %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-user-shield me-2"></i>Hak Para Pihak
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if analysis.full_result.Hak.0 %}
+                            <ul class="list-group list-group-flush">
+                                {% for hak in analysis.full_result.Hak %}
+                                <li class="list-group-item border-0 ps-0">
+                                    <i class="fas fa-shield-alt text-info me-2"></i>
+                                    {{ hak }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">Tidak ada hak yang disebutkan secara eksplisit dalam dokumen.</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Additional Details -->
+                <div class="row">
+                    {% if analysis.full_result.Penyelesaian %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-primary">
+                                    <i class="fas fa-gavel me-2"></i>Penyelesaian Sengketa
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ analysis.full_result.Penyelesaian }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if analysis.full_result.Pembayaran %}
+                    <div class="col-md-6 mb-4">
+                        <div class="card shadow-sm border-0 h-100">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0 text-primary">
+                                    <i class="fas fa-credit-card me-2"></i>Ketentuan Pembayaran
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p>{{ analysis.full_result.Pembayaran }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Analysis Section -->
+                {% if analysis.full_result.Analisis %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-search me-2"></i>Analisis Mendalam
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if analysis.full_result.Analisis.Kesesuaian %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-check-double text-success me-2"></i>Kesesuaian Dokumen:</h6>
+                            <p>{{ analysis.full_result.Analisis.Kesesuaian }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if analysis.full_result.Analisis.Kekurangan %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-exclamation-triangle text-warning me-2"></i>Kekurangan:</h6>
+                            <p>{{ analysis.full_result.Analisis.Kekurangan }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if analysis.full_result.Analisis.Potensi_Celah_Hukum %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-shield-alt text-danger me-2"></i>Potensi Celah Hukum:</h6>
+                            <p>{{ analysis.full_result.Analisis.Potensi_Celah_Hukum }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        {% if analysis.full_result.Analisis.Rekomendasi %}
+                        <div class="mb-3">
+                            <h6><i class="fas fa-lightbulb text-info me-2"></i>Rekomendasi:</h6>
+                            <p>{{ analysis.full_result.Analisis.Rekomendasi }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Recommendations -->
+                {% if analysis.full_result.Clause_Suggestion %}
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-lightbulb me-2"></i>Saran Klausul Tambahan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% for suggestion in analysis.full_result.Clause_Suggestion %}
+                            <div class="col-12 mb-3">
+                                <div class="recommendation-item">
+                                    <h6 class="text-primary mb-2">
+                                        <i class="fas fa-plus-circle me-2"></i>{{ suggestion.title }}
+                                    </h6>
+                                    <p class="mb-0">{{ suggestion.description }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Download Report Button -->
+                <div class="text-center">
+                    <button class="btn btn-outline-primary btn-lg me-3" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Cetak Laporan
+                    </button>
+                    <a href="{% url 'main:document_analysis' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus me-2"></i>Analisis Dokumen Baru
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Error Display -->
+            {% elif analysis.full_result.error %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Error dalam Analisis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Error:</strong> {{ analysis.full_result.error }}</p>
+                    <details>
+                        <summary>Raw Response</summary>
+                        <pre>{{ analysis.full_result.raw_answer }}</pre>
+                    </details>
+                    <div class="mt-3">
+                        <a href="{% url 'main:document_analysis' %}" class="btn btn-primary">
+                            <i class="fas fa-redo me-2"></i>Coba Lagi
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
     </div>
-    
-    {% include 'partials/footer.html' %}
-    <script src="{% static 'js/document-upload.js' %}"></script>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('pdf-file');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    const removeFileBtn = document.getElementById('remove-file');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const uploadForm = document.getElementById('upload-form');
+    const loadingState = document.getElementById('loading-state');
+
+    // Click to upload
+    if (uploadArea) {
+        uploadArea.addEventListener('click', function() {
+            fileInput.click();
+        });
+
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                fileInput.files = files;
+                handleFileSelect();
+            } else {
+                alert('Harap pilih file PDF yang valid.');
+            }
+        });
+    }
+
+    // File input change
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    function handleFileSelect() {
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('d-none');
+            uploadArea.classList.add('d-none');
+            analyzeBtn.disabled = false;
+        }
+    }
+
+    // Remove file
+    if (removeFileBtn) {
+        removeFileBtn.addEventListener('click', function() {
+            fileInput.value = '';
+            fileInfo.classList.add('d-none');
+            uploadArea.classList.remove('d-none');
+            analyzeBtn.disabled = true;
+        });
+    }
+
+    // Form submission
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            if (loadingState) {
+                loadingState.classList.remove('d-none');
+                uploadForm.classList.add('d-none');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

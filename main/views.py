@@ -317,8 +317,7 @@ def clear_chat(request):
 
 def document_analysis_view(request):
     """
-    View untuk halaman analisis dokumen
-    Menggunakan template document-analysis.html yang sudah ada
+    View untuk halaman analisis dokumen dengan handling yang lebih baik
     """
     context = {}
     
@@ -329,66 +328,192 @@ def document_analysis_view(request):
         
         pdf_file = request.FILES['pdf_file']
         
+        # Validasi file
+        if not pdf_file.name.lower().endswith('.pdf'):
+            messages.error(request, 'File harus berformat PDF.')
+            return render(request, 'document-analysis.html', context)
+        
+        if pdf_file.size > 10 * 1024 * 1024:  # 10MB limit
+            messages.error(request, 'Ukuran file maksimal 10MB.')
+            return render(request, 'document-analysis.html', context)
+        
         try:
             # Baca file PDF
             document_text = read_pdf(pdf_file)
             
-            # Analisis dokumen dengan prompt yang sesuai untuk template
-            prompt = f"""Dokumen yang akan dianalisis adalah sebagai berikut:
-{document_text}
+            if not document_text.strip():
+                messages.error(request, 'File PDF kosong atau tidak dapat dibaca.')
+                return render(request, 'document-analysis.html', context)
+            
+            # Analisis dokumen dengan prompt yang sudah diperbaiki
+            prompt = """Dokumen yang akan dianalisis adalah sebagai berikut:
+{}
 
 Tugas Anda adalah menganalisis dokumen tersebut dan memberikan output dalam format JSON dengan bidang berikut:
-- Judul Dokumen: Judul dokumen hukum.
+- Judul_Dokumen: Judul dokumen hukum.
 - Tanggal: Tanggal yang disebutkan dalam dokumen.
-- Pihak: Nama-nama pihak yang terlibat dalam dokumen.
+- Pihak: Array berisi informasi pihak dengan format objek yang memiliki properti Nama, Jabatan, Alamat, dan Peran.
 - Deskripsi: Ringkasan singkat mengenai isi dokumen.
-- Perjanjian: Kesepakatan atau kewajiban utama yang dibahas dalam dokumen.
-- Hak: Hak-hak yang secara eksplisit disebutkan dalam dokumen.
+- Perjanjian: Array berisi poin-poin perjanjian.
+- Hak: Array berisi hak-hak yang disebutkan.
 - Penyelesaian: Cara penyelesaian sengketa yang disebutkan dalam dokumen.
 - Pembayaran: Ketentuan terkait pembayaran, jika ada.
-- Pengecualian: Ketentuan pengecualian atau kondisi tertentu yang disebutkan dalam dokumen.
+- Pengecualian: Array berisi pengecualian yang disebutkan.
 - Skor: Penilaian terhadap kelengkapan, kejelasan, dan kualitas dokumen (1-10).
 - Kesimpulan: Kesimpulan keseluruhan tentang dokumen.
-- Clause Suggestion: Array berisi saran klausul tambahan dengan format [{"title": "...", "description": "..."}].
+- Clause_Suggestion: Array berisi saran klausul dengan format objek yang memiliki properti title dan description.
+- Analisis: Object berisi Kesesuaian, Kekurangan, Potensi_Celah_Hukum, dan Rekomendasi.
 
 Berikan analisis yang mencakup:
 - Kesesuaian dokumen dengan kebutuhan hukum.
 - Kesalahan atau kekurangan dalam teks dokumen.
 - Potensi celah hukum yang dapat menimbulkan masalah.
 - Rekomendasi klausa tambahan untuk mencegah potensi masalah di masa depan.
-"""
+
+PENTING: Berikan HANYA JSON yang valid, tanpa text tambahan sebelum atau sesudahnya.
+
+Contoh format output yang diharapkan:
+{{
+  "Judul_Dokumen": "Nama dokumen",
+  "Tanggal": "Tanggal dokumen",
+  "Pihak": [
+    {{
+      "Nama": "Nama pihak",
+      "Jabatan": "Jabatan",
+      "Alamat": "Alamat",
+      "Peran": "Peran dalam perjanjian"
+    }}
+  ],
+  "Deskripsi": "Deskripsi dokumen",
+  "Perjanjian": ["Poin 1", "Poin 2"],
+  "Hak": ["Hak 1", "Hak 2"],
+  "Penyelesaian": "Cara penyelesaian sengketa",
+  "Pembayaran": "Ketentuan pembayaran",
+  "Pengecualian": ["Pengecualian 1"],
+  "Skor": 7,
+  "Kesimpulan": "Kesimpulan analisis",
+  "Clause_Suggestion": [
+    {{
+      "title": "Judul klausul",
+      "description": "Deskripsi klausul"
+    }}
+  ],
+  "Analisis": {{
+    "Kesesuaian": "Analisis kesesuaian",
+    "Kekurangan": "Analisis kekurangan",
+    "Potensi_Celah_Hukum": "Analisis celah hukum",
+    "Rekomendasi": "Rekomendasi perbaikan"
+  }}
+}}
+""".format(document_text)
             
             result = analysis_rag_chain.invoke({"input": prompt})
             answer = result.get("answer", "")
             
+            # Clean up the answer - remove any non-JSON text
+            answer = answer.strip()
+            if answer.startswith('```json'):
+                answer = answer[7:]
+            if answer.startswith('```'):
+                answer = answer[3:]
+            if answer.endswith('```'):
+                answer = answer[:-3]
+            answer = answer.strip()
+            
             # Coba parse sebagai JSON
             try:
                 analysis_result = json.loads(answer)
+                
+                # Process and clean the data
+                processed_analysis = process_analysis_result(analysis_result)
+                
                 context['analysis'] = {
-                    'summary': analysis_result.get('Kesimpulan', 'Tidak ada kesimpulan'),
-                    'recommendations': [
-                        item.get('description', item.get('title', str(item))) 
-                        for item in analysis_result.get('Clause Suggestion', [])
-                    ] if isinstance(analysis_result.get('Clause Suggestion'), list) else [],
-                    'legal_risks': f"Skor dokumen: {analysis_result.get('Skor', 'N/A')}/10. " + 
-                                 analysis_result.get('Deskripsi', 'Tidak ada deskripsi risiko.'),
-                    'full_result': analysis_result
+                    'summary': processed_analysis.get('Kesimpulan', 'Tidak ada kesimpulan'),
+                    'legal_risks': "Skor dokumen: {}/10. {}".format(
+                        processed_analysis.get('Skor', 'N/A'),
+                        processed_analysis.get('Analisis', {}).get('Potensi_Celah_Hukum', 'Tidak ada analisis risiko.')
+                    ),
+                    'full_result': processed_analysis
                 }
-            except json.JSONDecodeError:
+                
+            except json.JSONDecodeError as e:
+                # Fallback jika tidak bisa parse JSON
+                messages.error(request, 'Format hasil analisis tidak valid: {}'.format(str(e)))
                 context['analysis'] = {
-                    'summary': answer,
-                    'recommendations': ['Tidak dapat memparse hasil analisis'],
-                    'legal_risks': 'Error dalam analisis',
-                    'full_result': {'raw_answer': answer}
+                    'summary': 'Error dalam parsing hasil analisis',
+                    'legal_risks': 'Tidak dapat memproses hasil analisis',
+                    'full_result': {'raw_answer': answer, 'error': str(e)}
                 }
             
             context['filename'] = pdf_file.name
-            messages.success(request, f'Dokumen "{pdf_file.name}" berhasil dianalisis.')
+            messages.success(request, 'Dokumen "{}" berhasil dianalisis.'.format(pdf_file.name))
             
         except Exception as e:
-            messages.error(request, f'Gagal menganalisis dokumen: {str(e)}')
+            messages.error(request, 'Gagal menganalisis dokumen: {}'.format(str(e)))
     
     return render(request, 'document-analysis.html', context)
+
+def process_analysis_result(data):
+    """
+    Process and clean the analysis result data
+    """
+    processed = {}
+    
+    # Basic fields
+    processed['Judul_Dokumen'] = data.get('Judul Dokumen', data.get('Judul_Dokumen', ''))
+    processed['Tanggal'] = data.get('Tanggal', '')
+    processed['Deskripsi'] = data.get('Deskripsi', '')
+    processed['Penyelesaian'] = data.get('Penyelesaian', '')
+    processed['Pembayaran'] = data.get('Pembayaran', '')
+    processed['Skor'] = data.get('Skor', 0)
+    processed['Kesimpulan'] = data.get('Kesimpulan', '')
+    
+    # Process Pihak - fix the duplicate field issue
+    pihak_data = data.get('Pihak', [])
+    processed_pihak = []
+    
+    if isinstance(pihak_data, list):
+        for pihak in pihak_data:
+            if isinstance(pihak, dict):
+                clean_pihak = {
+                    'Nama': pihak.get('Nama', ''),
+                    'Jabatan': pihak.get('Jabatan', ''),
+                    'Alamat': pihak.get('Alamat', ''),
+                    'Peran': pihak.get('Peran', pihak.get('Pihak', ''))  # Use Peran or fallback to Pihak
+                }
+                processed_pihak.append(clean_pihak)
+            else:
+                processed_pihak.append(str(pihak))
+    
+    processed['Pihak'] = processed_pihak
+    
+    # Process arrays
+    processed['Perjanjian'] = data.get('Perjanjian', [])
+    processed['Hak'] = data.get('Hak', [])
+    processed['Pengecualian'] = data.get('Pengecualian', [])
+    
+    # Process Clause Suggestions
+    clause_suggestions = data.get('Clause Suggestion', data.get('Clause_Suggestion', []))
+    processed['Clause_Suggestion'] = clause_suggestions
+    
+    # Process Analisis
+    analisis_data = data.get('Analisis', {})
+    if isinstance(analisis_data, dict):
+        processed['Analisis'] = {
+            'Kesesuaian': analisis_data.get('Kesesuaian Dokumen dengan Kebutuhan Hukum', 
+                                         analisis_data.get('Kesesuaian', '')),
+            'Kekurangan': analisis_data.get('Kesalahan atau Kekurangan dalam Teks Dokumen',
+                                          analisis_data.get('Kekurangan', '')),
+            'Potensi_Celah_Hukum': analisis_data.get('Potensi Celah Hukum yang Dapat Menimbulkan Masalah',
+                                                   analisis_data.get('Potensi_Celah_Hukum', '')),
+            'Rekomendasi': analisis_data.get('Rekomendasi Klausa Tambahan',
+                                           analisis_data.get('Rekomendasi', ''))
+        }
+    else:
+        processed['Analisis'] = {}
+    
+    return processed
+
 
 def business_checklist_view(request):
     """
@@ -414,21 +539,24 @@ def business_checklist_view(request):
             "Kemitraan/Investor": request.POST.get('partnerships', 'Tidak ada')
         }
         
-        # Buat prompt
-        prompt = f"""
+        # Buat prompt dengan format yang lebih aman
+        team_members_str = ', '.join(business_info["Tim atau Pendiri"])
+        known_regulations_str = ', '.join(business_info["Regulasi yang Diketahui"])
+        
+        prompt = """
 Saya memiliki ide bisnis sebagai berikut:
-- Nama Ide Bisnis: {business_info["Nama Ide Bisnis"]}
-- Deskripsi Ide: {business_info["Deskripsi Ide"]}
-- Target Pasar: {business_info["Target Pasar"]}
-- Model Bisnis: {business_info["Model Bisnis"]}
-- Lokasi Operasional: {business_info["Lokasi Operasional"]}
-- Bentuk Usaha: {business_info["Bentuk Usaha"]}
-- Kebutuhan Modal: {business_info["Kebutuhan Modal"]}
-- Tim atau Pendiri: {', '.join(business_info["Tim atau Pendiri"])}
-- Jenis Produk/Jasa: {business_info["Jenis Produk/Jasa"]}
-- Rencana Pemasaran: {business_info["Rencana Pemasaran"]}
-- Regulasi yang Diketahui: {', '.join(business_info["Regulasi yang Diketahui"])}
-- Kemitraan/Investor: {business_info["Kemitraan/Investor"]}
+- Nama Ide Bisnis: {}
+- Deskripsi Ide: {}
+- Target Pasar: {}
+- Model Bisnis: {}
+- Lokasi Operasional: {}
+- Bentuk Usaha: {}
+- Kebutuhan Modal: {}
+- Tim atau Pendiri: {}
+- Jenis Produk/Jasa: {}
+- Rencana Pemasaran: {}
+- Regulasi yang Diketahui: {}
+- Kemitraan/Investor: {}
 
 Tolong bantu analisis ide bisnis saya. Berikan jawaban dalam format JSON dengan struktur:
 {{
@@ -448,11 +576,34 @@ Tolong bantu analisis ide bisnis saya. Berikan jawaban dalam format JSON dengan 
   ],
   "rekomendasi_tambahan": ["rekomendasi 1", "rekomendasi 2"]
 }}
-"""
+""".format(
+            business_info["Nama Ide Bisnis"],
+            business_info["Deskripsi Ide"],
+            business_info["Target Pasar"],
+            business_info["Model Bisnis"],
+            business_info["Lokasi Operasional"],
+            business_info["Bentuk Usaha"],
+            business_info["Kebutuhan Modal"],
+            team_members_str,
+            business_info["Jenis Produk/Jasa"],
+            business_info["Rencana Pemasaran"],
+            known_regulations_str,
+            business_info["Kemitraan/Investor"]
+        )
         
         try:
             result = checklist_rag_chain.invoke({"input": prompt})
             answer = result.get("answer", "")
+            
+            # Clean up the answer
+            answer = answer.strip()
+            if answer.startswith('```json'):
+                answer = answer[7:]
+            if answer.startswith('```'):
+                answer = answer[3:]
+            if answer.endswith('```'):
+                answer = answer[:-3]
+            answer = answer.strip()
             
             # Coba parse sebagai JSON
             try:
@@ -470,6 +621,6 @@ Tolong bantu analisis ide bisnis saya. Berikan jawaban dalam format JSON dengan 
             messages.success(request, 'Checklist bisnis berhasil dibuat.')
             
         except Exception as e:
-            messages.error(request, f'Terjadi kesalahan: {str(e)}')
+            messages.error(request, 'Terjadi kesalahan: {}'.format(str(e)))
     
     return render(request, 'business-checklist.html', context)
