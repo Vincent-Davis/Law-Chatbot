@@ -19,10 +19,9 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'main:index' %}">
-                <i class="fas fa-balance-scale me-2"></i>
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="{% url 'main:index' %}">
                 LegalLink
             </a>
             
@@ -76,24 +75,64 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-dark text-light py-4 mt-5">
+    <footer class="footer-section">
         <div class="container">
-            <div class="row">
+            <div class="row align-items-center">
                 <div class="col-md-6">
-                    <h5><i class="fas fa-balance-scale me-2"></i>LegalLink</h5>
-                    <p class="mb-0">Asisten hukum AI terpercaya untuk kebutuhan legal Anda.</p>
+                    <div class="d-flex align-items-center mb-3 mb-md-0">
+                        <!-- <img src="{% static 'images/logo.png' %}" alt="LegalLink Logo" class="footer-logo me-3"> -->
+                        <div>
+                            <h5 class="text-white mb-1">LegalLink</h5>
+                            <p class="text-light mb-0">Asisten hukum AI terpercaya untuk kebutuhan legal Anda.</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <h6>Kontak</h6>
-                    <p class="mb-0">
-                        <i class="fas fa-envelope me-1"></i>
-                        info@legallink.id
-                    </p>
+                    <div class="footer-contact">
+                        <!-- <h6 class="text-white mb-2">Kontak Kami</h6> -->
+                        <p class="text-light mb-1">
+                            <i class="fas fa-envelope me-2"></i>
+                            info@legallink.id
+                        </p>
+                        <p class="text-light mb-0">
+                            <i class="fas fa-phone me-2"></i>
+                            +62 21 1234 5678
+                        </p>
+                    </div>
                 </div>
             </div>
-            <hr class="my-3">
-            <div class="text-center">
-                <small>&copy; 2025 LegalLink. Semua hak dilindungi.</small>
+            
+            <hr class="footer-divider">
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="footer-links">
+                        <a href="{% url 'main:index' %}" class="footer-link me-3">Beranda</a>
+                        <a href="{% url 'main:chat' %}" class="footer-link me-3">Chat AI</a>
+                        <a href="{% url 'main:document_analysis' %}" class="footer-link me-3">Analisis Dokumen</a>
+                        <a href="{% url 'main:business_checklist' %}" class="footer-link">Checklist Bisnis</a>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="social-links">
+                        <a href="#" class="social-link me-3" title="Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="#" class="social-link me-3" title="Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-link me-3" title="LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </a>
+                        <a href="#" class="social-link" title="Instagram">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <small class="text-light">&copy; 2025 LegalLink. Semua hak dilindungi undang-undang.</small>
             </div>
         </div>
     </footer>

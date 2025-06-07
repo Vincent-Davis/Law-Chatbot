@@ -19,8 +19,11 @@
                     <a href="{% url 'main:chat' %}" class="btn btn-light btn-lg me-3 mb-3">
                         <i class="fas fa-comments me-2"></i>Mulai Chat
                     </a>
-                    <a href="{% url 'main:document_analysis' %}" class="btn btn-outline-light btn-lg mb-3">
+                    <a href="{% url 'main:document_analysis' %}" class="btn btn-light btn-lg me-3 mb-3">
                         <i class="fas fa-file-alt me-2"></i>Analisis Dokumen
+                    </a>
+                    <a href="{% url 'main:business_checklist' %}" class="btn btn-light btn-lg me-3 mb-3">
+                        <i class="fas fa-clipboard-check me-2"></i>Checklist Bisnis
                     </a>
                 </div>
             </div>
@@ -143,9 +146,14 @@
                 <p class="lead mb-4">
                     Bergabunglah dengan ribuan pengguna yang telah mempercayai LegalLink untuk kebutuhan hukum mereka
                 </p>
-                <a href="{% url 'main:chat' %}" class="btn btn-light btn-lg">
-                    <i class="fas fa-rocket me-2"></i>Mulai Sekarang
-                </a>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="{% url 'main:chat' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-comments me-2"></i>Mulai Chat
+                    </a>
+                    <a href="{% url 'main:business_checklist' %}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-clipboard-check me-2"></i>Checklist Bisnis
+                    </a>
+                </div>
             </div>
         </div>
     </div>
