@@ -7,7 +7,7 @@ import json
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib import messages
-
+from django.shortcuts import redirect
 from langchain_google_genai import ChatGoogleGenerativeAI
 # Load environment variables dari .env
 load_dotenv()
@@ -26,7 +26,7 @@ from main.utils import read_pdf
 
 # Inisialisasi LLM
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-pro",
+    model="gemini-2.0-flash",
     temperature=0.2,
     top_p=0.95,
     top_k=40,
@@ -246,20 +246,32 @@ def index(request):
     return render(request, 'index.html')
 
 def chat_view(request):
-    """
-    View untuk halaman chat - menampilkan form dan riwayat chat
-    Menggunakan template chat.html yang sudah ada
-    """
+    """View untuk halaman chat - menampilkan form dan riwayat chat"""
     chat_history = request.session.get('chat_history', [])
     
+    # Convert chat_history to JSON string for JavaScript
+    chat_history_json = json.dumps(chat_history) if chat_history else '[]'
+    
+    return render(request, 'chat.html', {
+        'chat_history': chat_history,
+        'chat_history_json': chat_history_json
+    })
+
+
+# Add these functions to your existing views.py
+
+@csrf_exempt
+def chat_ajax(request):
+    """AJAX endpoint untuk chat"""
     if request.method == 'POST':
-        question = request.POST.get('question', '').strip()
-        
-        if not question:
-            messages.error(request, 'Masukkan pertanyaan Anda.')
-            return render(request, 'chat.html', {'chat_history': chat_history})
-        
         try:
+            data = json.loads(request.body)
+            question = data.get('question', '').strip()
+            chat_history = data.get('chat_history', [])
+            
+            if not question:
+                return JsonResponse({'error': 'Masukkan pertanyaan Anda.'}, status=400)
+            
             # Panggil rag_chain dengan input dan chat_history yang diberikan
             result = chat_rag_chain.invoke({"input": question, "chat_history": chat_history})
             answer = result.get("answer", "")
@@ -271,10 +283,30 @@ def chat_view(request):
             # Simpan ke session
             request.session['chat_history'] = chat_history
             
-        except Exception as e:
-            messages.error(request, f'Terjadi kesalahan: {str(e)}')
+            return JsonResponse({
+                "question": question,
+                "answer": answer,
+                "chat_history": chat_history,
+                "success": True
+            })
             
-    return render(request, 'chat.html', {'chat_history': chat_history})
+        except Exception as e:
+            return JsonResponse({'error': f'Terjadi kesalahan: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def clear_chat_ajax(request):
+    """AJAX endpoint untuk menghapus riwayat chat"""
+    if request.method == 'POST':
+        try:
+            if 'chat_history' in request.session:
+                del request.session['chat_history']
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'error': f'Terjadi kesalahan: {str(e)}'}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def clear_chat(request):
     """Clear chat history"""

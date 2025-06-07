@@ -1,59 +1,117 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #f9f9f9;
-}
-
-.chat-box {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 15px;
-  max-width: 600px;
-  margin: 20px auto;
-  background-color: #fff;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+/* Chat specific styles */
+.chat-container {
+    background-color: #f8f9fa;
 }
 
 .message {
-  margin-bottom: 10px;
-  padding: 10px;
-  border-radius: 5px;
+    margin-bottom: 1rem;
 }
 
-.message.user {
-  text-align: right;
-  background-color: #e0f7fa;
+.message-content {
+    line-height: 1.6;
 }
 
-.message.ai {
-  text-align: left;
-  background-color: #f1f8e9;
+.message-content h3,
+.message-content h4,
+.message-content h5 {
+    color: #2c3e50;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
-input[type="text"] {
-  width: calc(100% - 22px);
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-bottom: 10px;
+.message-content ul {
+    margin-bottom: 0.5rem;
+    padding-left: 1.2rem;
 }
 
-button {
-  padding: 10px 15px;
-  font-size: 1rem;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+.message-content li {
+    margin-bottom: 0.25rem;
 }
 
-button:hover {
-  background-color: #0056b3;
+.message-content strong {
+    color: #1a73e8;
+    font-weight: 600;
 }
 
-.error {
-  color: red;
-  margin-top: 10px;
+.example-question {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.example-question:hover {
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+    transform: translateY(-1px);
+}
+
+.chat-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+#send-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Typing indicator */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    color: #6c757d;
+    font-style: italic;
+}
+
+.typing-indicator span {
+    height: 8px;
+    width: 8px;
+    margin: 0 2px;
+    background-color: #6c757d;
+    border-radius: 50%;
+    display: inline-block;
+    animation: typing 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typing {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Message animations */
+.message {
+    transition: all 0.3s ease;
+}
+
+/* Better styling for AI responses */
+.bg-light.border {
+    background-color: #ffffff !important;
+    border: 1px solid #e9ecef !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }

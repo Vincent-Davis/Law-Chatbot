@@ -7,7 +7,9 @@ urlpatterns = [
     # Web Interface URLs
     path('', views.index, name='index'),
     path('chat/', views.chat_view, name='chat'),
+    path('chat/ajax/', views.chat_ajax, name='chat_ajax'),
     path('chat/clear/', views.clear_chat, name='clear_chat'),
+    path('chat/clear/ajax/', views.clear_chat_ajax, name='clear_chat_ajax'),
     path('document-analysis/', views.document_analysis_view, name='document_analysis'),
     path('business-checklist/', views.business_checklist_view, name='business_checklist'),
     

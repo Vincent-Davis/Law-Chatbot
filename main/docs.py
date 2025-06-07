@@ -20,13 +20,13 @@ text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap =4
 combined_docs = []
 file_paths = [
     "5. UU-40-2007 PERSEROAN TERBATAS.pdf",
-    "e39ab-uu-nomor-8-tahun-1999.pdf",
-    "kolonial_kuh_perdata_fix.pdf",
-    "KUH DAGANG.pdf",
-    "UU Nomor  19 Tahun 2016.pdf",
-    "UU Nomor 13 Tahun 2003.pdf",
-    "UU_1999_30.pdf",
-    "UU_Nomor_11_Tahun_2020-compressed.pdf",
+    # "e39ab-uu-nomor-8-tahun-1999.pdf",
+    # "kolonial_kuh_perdata_fix.pdf",
+    # "KUH DAGANG.pdf",
+    # "UU Nomor  19 Tahun 2016.pdf",
+    # "UU Nomor 13 Tahun 2003.pdf",
+    # "UU_1999_30.pdf",
+    # "UU_Nomor_11_Tahun_2020-compressed.pdf",
 ]
 base_path = os.path.join(settings.BASE_DIR, 'static', 'docs')
 
