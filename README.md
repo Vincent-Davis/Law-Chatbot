@@ -33,7 +33,7 @@ LegalLink adalah proyek pribadi sistem AI yang dirancang untuk membantu dalam an
 - **Django 4.2+** - Web framework Python
 - **LangChain** - Framework untuk aplikasi LLM
 - **Google Gemini 2.0 Flash** - Large Language Model
-- **ChromaDB** - Vector database untuk document retrieval
+- **FAISS** - Vector database untuk document retrieval
 - **PyPDF2** - Library untuk processing PDF
 - **Google GenerativeAI Embeddings** - Text embeddings
 
